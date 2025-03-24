@@ -86,7 +86,7 @@ def submit_job(model_package_uri):
 # Function to periodically check the status of the submitted job
 def check_job_status(job_id):
     while True:
-        response = requests.get(job_status_url, headers=headers, params={"thread_id": job_id})
+        response = requests.get(job_status_url, headers=headers, params={"job_id": job_id})
         response.raise_for_status()
         
         response_data = response.json()

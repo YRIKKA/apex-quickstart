@@ -401,7 +401,7 @@ def check_job_status(api_key, job_id):
         response = requests.get(
             "https://api.yrikka.com/v1/job-status", 
             headers=headers, 
-            params={"thread_id": job_id}
+            params={"job_id": job_id}
         )
         
         response_data = response.json()

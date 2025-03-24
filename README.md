@@ -129,8 +129,6 @@ The example implementation in this repository uses the [Croppie cherry detection
 }
 ```
 
-> **Attribution**: Croppie cherry detection model © 2024 by Alliance Bioversity & CIAT, Producers Direct and M-Omulimisa is licensed under GNU-GPLv3. The model was funded by Deutsche Gesellschaft für Internationale Zusammenarbeit (GIZ) Fair Forward Initiative - AI for All.
-
 ### inference.py Requirements
 
 Your `inference.py` must include the following components:

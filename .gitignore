@@ -1,0 +1,10 @@
+.env
+venv/
+
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.tar.gz
+*.pt
+*.safetensors

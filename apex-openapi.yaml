@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: YRIKKA APEX API
+  description: |
+    API for YRIKKA APEX - an automated context-based evaluation system for object detection models.
+    
+    ## Authentication
+    All API endpoints require an API key to be included in the request header as `x-api-key`.
+    
+    **To get your API key:**
+    1. [Sign up for an APEX API key](https://apex.yrikka.com/login?client_id=3fn9ks2vmp3gdis9jvts464v31&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fyrikka.com%2F)
+    2. Verify your email address
+    3. Check your email for your API key
+    
+    Keep your API key secure and do not share it publicly.
+    
+    ## Overview
+    The APEX API allows you to:
+    1. Upload a model package (as a tarball)
+    2. Submit evaluation jobs with contextual descriptions
+    3. Get context-specific evaluation results to understand how your model performs in different scenarios
+    
+    ## Complete Process
+    Here is the end-to-end process for evaluating your object detection model with APEX:
+    
+    1. **Prepare your model package**:
+       - Create an `inference.py` script that implements the required functions:
+         - `model_fn(model_dir)`: Loads your model
+           - **Input**: `model_dir` (str) - Path to the directory containing your model weights
+           - **Output**: Your loaded model object (can be any format your predict_fn accepts)
+         - `input_fn(image)`: Prepares input for your model
+           - **Input**: `image` (PIL.Image) - A PIL Image object
+           - **Output**: Processed input in the format your model requires (e.g., numpy array)
+         - `predict_fn(image_array, model)`: Runs inference
+           - **Input**: 
+             - `image_array` - Output from input_fn
+             - `model` - Model object returned by model_fn
+           - **Output**: Raw prediction results (can be any format your output_fn accepts)
+         - `output_fn(predictions)`: Formats results
+           - **Input**: `predictions` - Output from predict_fn
+           - **Output**: Tuple of 3 numpy arrays:
+             - `class_names`: np.ndarray[str] - Array of class name strings
+             - `confidences`: np.ndarray[float] - Array of confidence scores
+             - `bounding_boxes`: np.ndarray[float] with shape (N,4) containing [xmin, ymin, xmax, ymax]
+       - Define a `CLASS_MAPPING` dictionary in your script that maps class indices to names
+       - Create a `manifest.json` file that specifies your entry point and model file names
+       - Include your model weights file (e.g., `model.pt`)
+    
+    2. **Package your model**:
+       - Create a tarball (tar.gz) of your model directory containing all required files
+       - Ensure your package follows the structure defined in the Model Package Structure section
+       - Note: Your model package should be less than 4GB in size
+    
+    3. **Upload your model package**:
+       - Request a presigned URL using the `/presigned` endpoint
+       - Use the presigned URL to upload your tarball to our S3 storage
+    
+    4. **Submit an evaluation job**:
+       - Call the `/submit-job` endpoint with your model package URI, target classes, and context description
+       - This will return a job ID that you can use to track your evaluation
+    
+    5. **Monitor job status**:
+       - Periodically check the `/job-status` endpoint with your job ID
+       - When the job completes, you'll receive comprehensive evaluation metrics
+    
+    The sample code in our [GitHub repository](https://github.com/yrikka/model-evaluation-example) demonstrates this complete workflow.
+    
+    ## Model Package Structure
+    Your model package should contain the following:
+    - `model.pt` - Your model weights file
+    - `inference.py` - The inference script implementing required functions
+    - `manifest.json` - Metadata specifying entry points and model files
+    
+    See the example implementation for more details on required functions and structure.
+  version: 1.0.0
+  contact:
+    email: help@yrikka.com
+  x-logo:
+    url: 'https://yrikka.com/images/logo.png'
+    altText: 'Yrikka Logo'
+externalDocs:
+  description: GitHub repository with example implementation
+  url: https://github.com/yrikka/model-evaluation-example
+servers:
+  - url: https://api.yrikka.com/v1
+    description: Yrikka API v1
+security:
+  - ApiKeyAuth: []
+paths:
+  /presigned:
+    get:
+      summary: Get a presigned URL for model package upload
+      description: |
+        Returns a presigned URL to upload your model package (tarball) to S3, 
+        as well as the S3 URI that will be used when submitting a job.
+      operationId: getPresignedUrl
+      tags:
+        - Model Management
+      responses:
+        '200':
+          description: Successful response with upload URL and S3 URI
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponse'
+              example:
+                upload_url: "https://yrikka-models.s3.amazonaws.com/user123/model_package_12345.tar.gz?..."
+                s3_uri: "s3://yrikka-models/user123/model_package_12345.tar.gz"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /submit-job:
+    post:
+      summary: Submit a model evaluation job
+      description: |
+        Submit a context-based evaluation job using your uploaded model package.
+        The model should be able to detect the specified target classes, and the
+        evaluation will be performed in the context described.
+      operationId: submitJob
+      tags:
+        - Job Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitJobRequest'
+            example:
+              s3_model_package_uri: "s3://yrikka-models/user123/model_package_12345.tar.gz"
+              target_classes: ["dark_brown_cherry", "green_cherry", "red_cherry"]
+              context_description: "Test my cherry detection model in various lighting conditions and environments."
+      responses:
+        '200':
+          description: Job submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitJobResponse'
+              example:
+                job_id: "job_67890abcdef"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid model package URI or missing required parameters"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /job-status:
+    get:
+      summary: Check the status of a submitted job
+      description: |
+        Returns the current status of a previously submitted job.
+        Jobs can be in one of several states: IN_PROGRESS, SUCCESS, FAIL, or ERROR.
+      operationId: getJobStatus
+      tags:
+        - Job Management
+      parameters:
+        - name: job_id
+          in: query
+          description: The job ID returned when submitting the job
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+              examples:
+                in_progress:
+                  value:
+                    status: "IN_PROGRESS"
+                    message: "Currently processing at node: evaluate_model."
+                completed:
+                  value:
+                    status: "SUCCESS"
+                    message: "Evaluation completed successfully."
+                    results: {
+                      "mAP": 0.87,
+                      "precision": 0.92,
+                      "recall": 0.83,
+                      "f1_score": 0.89,
+                      "per_class_metrics": {
+                        "dark_brown_cherry": {"precision": 0.95, "recall": 0.88, "f1": 0.91},
+                        "green_cherry": {"precision": 0.90, "recall": 0.82, "f1": 0.86},
+                        "red_cherry": {"precision": 0.91, "recall": 0.79, "f1": 0.85}
+                      },
+                      "evaluation_context": "Cherry detection in various lighting conditions",
+                      "total_test_images": 250,
+                      "evaluation_timestamp": "2023-06-15T14:30:45Z"
+                    }
+                failed:
+                  value:
+                    status: "FAIL"
+                    message: "Error processing model: model.py missing required output_fn function"
+                error:
+                  value:
+                    status: "ERROR"
+                    message: "No state snapshot found for job_id: job_invalid."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Job with ID job_67890abcdef not found"
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    PresignedUrlResponse:
+      type: object
+      required:
+        - upload_url
+        - s3_uri
+      properties:
+        upload_url:
+          type: string
+          description: Presigned URL for uploading the model package to S3
+        s3_uri:
+          type: string
+          description: S3 URI that identifies the uploaded model package (used in job submission)
+    SubmitJobRequest:
+      type: object
+      required:
+        - s3_model_package_uri
+        - target_classes
+        - context_description
+      properties:
+        s3_model_package_uri:
+          type: string
+          description: S3 URI of the uploaded model package (from the presigned URL response)
+        target_classes:
+          type: array
+          description: List of class names that the model should detect (must match the CLASS_MAPPING in the inference script)
+          items:
+            type: string
+        context_description:
+          type: string
+          description: Natural language description of the evaluation context
+    SubmitJobResponse:
+      type: object
+      required:
+        - job_id
+      properties:
+        job_id:
+          type: string
+          description: Unique identifier for the submitted job (used to check status)
+    JobStatusResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: Current status of the job (IN_PROGRESS, SUCCESS, FAIL, or ERROR)
+          enum: [IN_PROGRESS, SUCCESS, FAIL, ERROR]
+        message:
+          type: string
+          description: Human-readable description of the job status
+        results:
+          type: object
+          description: Evaluation metrics and results (only present when status is SUCCESS). This field is omitted entirely for other status values.
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message explaining what went wrong
+  responses:
+    Unauthorized:
+      description: Authentication information is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid or missing API key"
+tags:
+  - name: Model Management
+    description: Operations for managing model packages
+  - name: Job Management
+    description: Operations for submitting and monitoring evaluation jobs

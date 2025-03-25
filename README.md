@@ -456,4 +456,4 @@ Common issues and solutions:
 ## Need Help?
 
 - API Documentation: [APEX API Documentation](https://docs.yrikka.com/apex)
-- Contact Support: support@yrikka.com
+- Contact Support: help@yrikka.com

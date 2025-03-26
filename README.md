@@ -146,19 +146,20 @@ CLASS_MAPPING = {
 }
 ```
 
-#### 2. `model_fn(model_dir)`
-Loads your model from the specified path.
+#### 2. `model_fn(model_dir, device)`
+Loads your model from the specified path and moves it to the specified device.
 
 ```python
-def model_fn(model_dir: str):
+def model_fn(model_dir: str, device: str = "cpu"):
     """
-    Load the model from disk.
+    Load the model from disk and move it to the specified device.
     
     Args:
         model_dir: Full path to the model file
+        device: Device to run the model on ("cpu" or "cuda")
         
     Returns:
-        Your loaded model object
+        Your loaded model object on the specified device
     """
     # Example for PyTorch model
     import torch
@@ -167,19 +168,21 @@ def model_fn(model_dir: str):
     # model_dir is already the full path to the model file
     model = MyModel()
     model.load_state_dict(torch.load(model_dir))
+    model.to(device)  # Required: move model to the specified device
     return model
 ```
 
-#### 3. `input_fn(image)`
-Prepares input for your model.
+#### 3. `input_fn(image, device)`
+Prepares input for your model and handles device placement if needed.
 
 ```python
-def input_fn(image):
+def input_fn(image, device: str = "cpu"):
     """
     Preprocess the input image for model inference.
     
     Args:
         image: PIL.Image object
+        device: Device to place the processed input on ("cpu" or "cuda")
         
     Returns:
         Processed input in format required by your model
@@ -190,8 +193,10 @@ def input_fn(image):
     # Convert to numpy array
     img_array = np.array(image.convert("RGB"))
     
-    # Resize, normalize, etc.
-    img_array = img_array / 255.0
+    # For YOLO models, typically the model itself manages the device
+    # but for PyTorch models that need tensor inputs:
+    # import torch
+    # tensor_input = torch.tensor(img_array).to(device)
     
     return img_array
 ```
@@ -452,6 +457,8 @@ Common issues and solutions:
 - **Missing functions**: Ensure inference.py implements all required functions
 - **Class mapping**: Ensure your CLASS_MAPPING includes all target_classes
 - **Size limits**: Keep your model package under 4GB (packages larger than 4GB will be rejected)
+- **Device parameters**: Make sure to correctly implement the `device` parameter in both `model_fn` and `input_fn` functions
+- **Model movement**: Ensure your model is properly moved to the specified device using `.to(device)` for PyTorch models during model loading
 
 ## Need Help?
 

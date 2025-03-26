@@ -15,6 +15,7 @@ Note:
 
 from typing import Tuple
 import numpy as np
+import torch
 from PIL import Image
 from ultralytics import YOLO
 
@@ -27,13 +28,25 @@ CLASS_MAPPING = {
 }
 
 
-def model_fn(model_dir: str) -> YOLO:
-    return YOLO(model_dir)
+def model_fn(model_dir: str, device: str = "cpu") -> YOLO:
+    model = YOLO(model_dir)
+    model.to(device)
+    return model
 
-def input_fn(image: Image.Image) -> np.ndarray:
+def input_fn(image: Image.Image, device: str = "cpu") -> np.ndarray:
     """
     Convert a PIL.Image into a NumPy array ready for YOLO inference.
+    
+    Args:
+        image: PIL.Image object
+        device: Device to place the processed input on ("cpu" or "cuda")
+        
+    Returns:
+        NumPy array of the image in RGB format
     """
+    # For YOLO models, we keep the input as a NumPy array
+    # The YOLO model itself will handle moving data to the right device
+    # during inference based on where the model is loaded
     return np.array(image.convert("RGB"))
 
 def predict_fn(image_array: np.ndarray, model: YOLO) -> list:
@@ -69,13 +82,15 @@ def output_fn(
 
 
 if __name__ == "__main__":
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
     # Load the model
     my_model_path = "yolov8_cherry_detection_example/model.pt"
-    model = model_fn(my_model_path)
+    model = model_fn(my_model_path, device)
 
     # Process an image
     img = Image.new("RGB", (224, 224), (255, 255, 255))
-    model_input = input_fn(img)
+    model_input = input_fn(img, device)
 
     # Run inference
     preds = predict_fn(model_input, model)

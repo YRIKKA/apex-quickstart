@@ -25,11 +25,15 @@ info:
     
     1. **Prepare your model package**:
        - Create an `inference.py` script that implements the required functions:
-         - `model_fn(model_dir)`: Loads your model
-           - **Input**: `model_dir` (str) - Path to the directory containing your model weights
+         - `model_fn(model_dir, device)`: Loads your model
+           - **Input**: 
+             - `model_dir` (str) - Path to the directory containing your model weights
+             - `device` (str) - Either 'cpu' or 'cuda' - your function is responsible for moving the model to this device
            - **Output**: Your loaded model object (can be any format your predict_fn accepts)
-         - `input_fn(image)`: Prepares input for your model
-           - **Input**: `image` (PIL.Image) - A PIL Image object
+         - `input_fn(image, device)`: Prepares input for your model
+           - **Input**: 
+             - `image` (PIL.Image) - A PIL Image object
+             - `device` (str) - Either 'cpu' or 'cuda' - your function is responsible for moving input data to this device
            - **Output**: Processed input in the format your model requires (e.g., numpy array)
          - `predict_fn(image_array, model)`: Runs inference
            - **Input**: 
@@ -178,7 +182,6 @@ paths:
                 completed:
                   value:
                     status: "SUCCESS"
-                    message: "Evaluation completed successfully."
                     results: {
                       "mAP": 0.87,
                       "precision": 0.92,
@@ -260,7 +263,6 @@ components:
       type: object
       required:
         - status
-        - message
       properties:
         status:
           type: string
@@ -268,10 +270,10 @@ components:
           enum: [IN_PROGRESS, SUCCESS, FAIL, ERROR]
         message:
           type: string
-          description: Human-readable description of the job status
+          description: Human-readable description of the job status (present for IN_PROGRESS, FAIL, or ERROR status)
         results:
           type: object
-          description: Evaluation metrics and results (only present when status is SUCCESS). This field is omitted entirely for other status values.
+          description: Evaluation metrics and results (only present when status is SUCCESS)
     ErrorResponse:
       type: object
       required:

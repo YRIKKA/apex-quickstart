@@ -2,14 +2,14 @@
 This script provides an example of using a YOLO model for object detection inference.
 
 Components:
-1. CLASS_MAPPING: A dictionary mapping class indices to human-readable class names.
+1. CLASS_NAMES: A dictionary mapping class indices to human-readable class names.
 2. model_fn: Loads the YOLO model from the specified directory.
 3. input_fn: Converts a PIL.Image into an input suitable for YOLO inference.
 4. predict_fn: Runs inference on the input and returns YOLO Results objects.
 5. output_fn: Processes YOLO results to extract class names, confidences, and bounding boxes.
 
 Note:
-- The CLASS_MAPPING should match the classes used during the model's training.
+- The CLASS_NAMES should match the classes used during the model's training.
 - The model_fn must take the full model path as an argument and return a loaded model object.
 """
 
@@ -20,7 +20,7 @@ from PIL import Image
 from ultralytics import YOLO
 
 # Complete and total class mapping defined at the top
-CLASS_MAPPING = {
+CLASS_NAMES = {
     0: "dark_brown_cherry",
     1: "green_cherry",
     2: "red_cherry",
@@ -70,7 +70,7 @@ def output_fn(
         if hasattr(result.boxes, "data"):
             boxes = result.boxes.data.cpu().numpy()
             for x1, y1, x2, y2, conf, cls in boxes.tolist():
-                class_list.append(CLASS_MAPPING.get(int(cls), "unknown"))
+                class_list.append(CLASS_NAMES.get(int(cls), "unknown"))
                 conf_list.append(conf)
                 box_list.append([x1, y1, x2, y2])
 

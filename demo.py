@@ -2,7 +2,7 @@
 This script demonstrates how to package an object detection model directory, upload it to Yrikka, and submit context-based evaluation job.
 
 Directory Structure:
-yolov8_cherry_detection_example/
+yolo_v9_tiny/
     ├── model.pt          # Model weights
     ├── inference.py      # Inference script
     └── manifest.json     # Metadata and configuration specifiing the names of the inference script and model weights files
@@ -30,11 +30,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# api_key = os.getenv("YRIKKA_API_KEY")
 api_key = os.getenv("YRIKKA_API_KEY")
 
 # Configuration
-my_model_dir = "yolov8_cherry_detection_example" # Directory containing the model files (model.pt, inference.py, manifest.json)
+my_model_dir = "yolo_v9_tiny" # Directory containing the model files (model.pt, inference.py, manifest.json)
 output_filename = "model_package.tar.gz" # Name of the temporary tarball to be created
 
 # URLs for Yrikka API endpoints
@@ -71,12 +70,11 @@ def get_presigned_url():
 def submit_job(model_package_uri):
     data = {
         "s3_model_package_uri": model_package_uri,
-        "target_classes": ["dark_brown_cherry", "green_cherry", "red_cherry"], # Classes to be tested (from the CLASS_MAPPING in your inference script)
+        "target_classes": ["snowboard", "skateboard", "frisbee"], # Classes to be tested (from the CLASS_MAPPING in your inference script)
         "context_description": (
-            "Evaluate cherry detection in outdoor orchards with varying lighting conditions "
-            "including direct sunlight, overcast, and dawn/dusk. Include scenarios with cherries "
-            "partially hidden by leaves, different stages of ripeness, and multiple viewing angles. "
-            "Test with both close-up and distant views of cherry clusters."
+            "Test the Yolo v9 Tiny model at skate parks, snow resorts, and public parks during different times of day and weather conditions. "
+            "Generate test scenarios with people actively using the equipment as well as scenes where multiple objects are scattered "
+            "around at various distances from the camera."
         )
     }
     response = requests.post(submit_job_url, headers=headers, json=data)
@@ -92,7 +90,8 @@ def check_job_status(job_id):
         response_data = response.json()
         status = response_data.get("status")
         message = response_data.get("message")
-                
+        
+        print(f"Response: {response_data}")
         if status == "SUCCESS":
             print("Evaluation completed successfully!")
             return response_data.get("results") # Return the full results object
@@ -119,7 +118,7 @@ if __name__ == "__main__":
 
     # Submit the job to Yrikka API
     job_id = submit_job(model_package_uri)  
-    print(f"Job ID: {job_id}")
+    print(f"Submitted new job with ID: {job_id}")
     
     # Check the job status
     results = check_job_status(job_id)  

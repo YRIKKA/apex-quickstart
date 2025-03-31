@@ -1,0 +1,5 @@
+{
+    "entry_point": "inference.py",
+    "model_file": "yolov9t.pt"
+    }
+  

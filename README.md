@@ -65,7 +65,7 @@ Your model package must include:
 - **model weights**: Your trained model file (e.g., `model.pt`)
 - **manifest.json**: Configuration file specifying entry points
 
-This repository includes an example model package in the `yolo_v9_tiny` directory.
+This repository includes an example model package in the `examples/yolo_v9_tiny` directory.
 
 ## Model Package Structure
 
@@ -78,7 +78,7 @@ yolo_v9_tiny/
 └── manifest.json    # Configuration specifying entry points
 ```
 
-> 📋 **Ready-to-Use Example**: Start with the `yolo_v9_tiny` directory as your template! This working example can be easily adapted for your own models:
+> 📋 **Ready-to-Use Example**: Start with the `examples/yolo_v9_tiny` directory as your template! This working example can be easily adapted for your own models:
 > 
 > 1. Copy the entire `yolo_v9_tiny` directory and rename it for your project
 > 2. Update the `CLASS_NAMES` dictionary in `inference.py` with your model's classes
@@ -117,15 +117,6 @@ Notes:
 ### Example Implementation
 
 The example implementation in this repository uses [YOLOv9-tiny](https://docs.ultralytics.com/models/yolov9/#performance-on-ms-coco-dataset), a lightweight version of YOLOv9 trained on the COCO dataset.
-
-> 📋 **Ready-to-Use Example**: Start with the `yolo_v9_tiny` directory as your template! This working example can be easily adapted for your own models:
-> 
-> 1. Copy the entire `yolo_v9_tiny` directory and rename it for your project
-> 2. Update the `CLASS_NAMES` dictionary in `inference.py` with your model's classes
-> 3. Replace the model file with your own weights (keep the same name or update manifest.json)
-> 4. Create a tarball of your directory following the instructions below
->
-> This approach can be adapted for other object detection architectures with minimal changes to the inference functions.
 
 ### inference.py Requirements
 

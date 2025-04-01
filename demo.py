@@ -33,7 +33,7 @@ load_dotenv()
 api_key = os.getenv("YRIKKA_API_KEY")
 
 # Configuration
-my_model_dir = "yolo_v9_tiny" # Directory containing the model files (model.pt, inference.py, manifest.json)
+my_model_dir = "examples/yolo_v9_tiny" # Directory containing the model files (model.pt, inference.py, manifest.json)
 output_filename = "model_package.tar.gz" # Name of the temporary tarball to be created
 
 # URLs for Yrikka API endpoints

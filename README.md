@@ -422,16 +422,44 @@ When using the `/job-status` endpoint with a completed job, you'll receive a res
   "status": "SUCCESS",
   "message": "Evaluation completed successfully.",
   "results": {
-    "mAP": 0.87,
-    "precision": 0.92,
-    "recall": 0.83,
-    "f1_score": 0.89,
-    "TODO":0.0,
-    "total_test_images": 250,
-    "evaluation_timestamp": "2023-06-15T14:30:45Z"
+    "Aggregate": {
+      "Precision": 0.812,
+      "Recall": 0.519,
+      "F1-score": 0.629
+    },
+    "Granular": [
+      {
+        "Category": "time of day",
+        "Items": [
+          {
+            "Context": "night",
+            "Precision": 0.786,
+            "Recall": 0.574,
+            "F1-Score": 0.644
+          }
+        ]
+      },
+      {
+        "Category": "environment",
+        "Items": [
+          {
+            "Context": "snow resort",
+            "Precision": 0.817,
+            "Recall": 0.391,
+            "F1-Score": 0.529
+          }
+        ]
+      }
+    ]
   }
 }
 ```
+
+The response includes:
+- **Aggregate metrics** across all test scenarios
+- **Granular results** broken down by different contexts
+  
+Each category contains detailed metrics for specific contexts, helping you understand how your model performs in different scenarios.
 
 ## Troubleshooting
 

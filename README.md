@@ -1,10 +1,8 @@
 # YRIKKA APEX: Automated Context-Based Object Detection Model Evaluation
 
-## Overview
-
 This repository provides sample code and examples for using YRIKKA's APEX API - an automated context-based evaluation system for object detection models. APEX allows you to test your models in specific scenarios by describing the context in natural language.
 
-![APEX Workflow](assets/apex-workflow.png)
+![APEX Workflow](assets/apex.png)
 
 **[🔑 Sign up for an APEX API key](https://apex.yrikka.com/login?client_id=3fn9ks2vmp3gdis9jvts464v31&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fyrikka.com%2F)**
 

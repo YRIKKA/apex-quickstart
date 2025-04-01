@@ -196,3 +196,25 @@ def output_fn(
         boxes.append(box_)
 
     return cls, conf, boxes
+
+
+if __name__ == "__main__":
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    # Load the model
+    my_model_path = "yolo_v9_tiny/yolov9t.pt"
+    model = model_fn(my_model_path, device)
+
+    # Process an example image
+    img = Image.new("RGB", (640, 640), (255, 255, 255))
+    model_input = input_fn(img, device)
+
+    # Run inference
+    preds = predict_fn(model_input, model)
+
+    # Process the results
+    classes, confidences, boxes = output_fn(preds, img)
+
+    print("Classes:", classes)
+    print("Confidences:", confidences)
+    print("Boxes:", boxes)

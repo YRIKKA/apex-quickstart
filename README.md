@@ -67,23 +67,23 @@ Your model package must include:
 - **model weights**: Your trained model file (e.g., `model.pt`)
 - **manifest.json**: Configuration file specifying entry points
 
-This repository includes an example model package in the `yolov8_cherry_detection_example` directory.
+This repository includes an example model package in the `yolo_v9_tiny` directory.
 
 ## Model Package Structure
 
 ### Required Files
 
 ```
-yolov8_cherry_detection_example/
+yolo_v9_tiny/
 ├── inference.py     # Implements required interface functions
 ├── model.pt         # Your model weights
 └── manifest.json    # Configuration specifying entry points
 ```
 
-> 📋 **Ready-to-Use Example**: Start with the `yolov8_cherry_detection_example` directory as your template! This working example can be easily adapted for your own models:
+> 📋 **Ready-to-Use Example**: Start with the `yolo_v9_tiny` directory as your template! This working example can be easily adapted for your own models:
 > 
-> 1. Copy the entire `yolov8_cherry_detection_example` directory and rename it for your project
-> 2. Update the `CLASS_MAPPING` dictionary in `inference.py` with your model's classes
+> 1. Copy the entire `yolo_v9_tiny` directory and rename it for your project
+> 2. Update the `CLASS_NAMES` dictionary in `inference.py` with your model's classes
 > 3. Replace the model file with your own weights (keep the same name or update manifest.json)
 > 4. Create a tarball of your directory following the instructions below
 >
@@ -114,98 +114,86 @@ Notes:
 - If your inference script imports libraries not in this list, your evaluation job will fail
 - Maximum package size must not exceed 4GB
 
-> 🔮 **Coming Soon**: In a future update, we plan to support custom dependencies via requirements.txt files. Stay tuned!
+> 🔮 **Coming Soon**: In a future update, we plan to support custom dependencies via requirements.txt files.
 
 ### Example Implementation
 
-The example implementation in this repository uses the [Croppie cherry detection model](https://huggingface.co/rgautroncgiar/croppie_coffee_ug), a YOLOv8 model fine-tuned for coffee cherry detection. This model detects four classes of coffee cherries:
+The example implementation in this repository uses [YOLOv9-tiny](https://docs.ultralytics.com/models/yolov9/#performance-on-ms-coco-dataset), a lightweight version of YOLOv9 trained on the COCO dataset.
 
-```python
-{
-    0: "dark_brown_cherry", 
-    1: "green_cherry", 
-    2: "red_cherry", 
-    3: "yellow_cherry"
-}
-```
+> 📋 **Ready-to-Use Example**: Start with the `yolo_v9_tiny` directory as your template! This working example can be easily adapted for your own models:
+> 
+> 1. Copy the entire `yolo_v9_tiny` directory and rename it for your project
+> 2. Update the `CLASS_NAMES` dictionary in `inference.py` with your model's classes
+> 3. Replace the model file with your own weights (keep the same name or update manifest.json)
+> 4. Create a tarball of your directory following the instructions below
+>
+> This approach can be adapted for other object detection architectures with minimal changes to the inference functions.
 
 ### inference.py Requirements
 
 Your `inference.py` must include the following components:
 
-#### 1. `CLASS_MAPPING` Dictionary
+#### 1. `CLASS_NAMES` Dictionary
 You must define a dictionary mapping class indices to class names at the top of your script.
 
 ```python
 # Define your class mapping - indices to human-readable class names
-CLASS_MAPPING = {
-    0: "dark_brown_cherry",
-    1: "green_cherry",
-    2: "red_cherry",
-    3: "yellow_cherry"
+CLASS_NAMES = {
+    0: 'person', 1: 'bicycle', 2: 'car',
+    # ... other classes ...
+    79: 'toothbrush'
 }
 ```
 
-#### 2. `model_fn(model_dir, device)`
+#### 2. `model_fn(weights_file, device)`
 Loads your model from the specified path and moves it to the specified device.
 
 ```python
-def model_fn(model_dir: str, device: str = "cpu"):
+def model_fn(weights_file: str, device: str = "cpu"):
     """
     Load the model from disk and move it to the specified device.
     
     Args:
-        model_dir: Full path to the model file
+        weights_file: Path to the model weights file
         device: Device to run the model on ("cpu" or "cuda")
         
     Returns:
-        Your loaded model object on the specified device
+        Loaded model object on the specified device
     """
-    # Example for PyTorch model
-    import torch
-    from my_model import MyModel
-    
-    # model_dir is already the full path to the model file
-    model = MyModel()
-    model.load_state_dict(torch.load(model_dir))
-    model.to(device)  # Required: move model to the specified device
+    model = YOLO(weights_file)
+    model.to(device)
     return model
 ```
 
-#### 3. `input_fn(image, device)`
+#### 3. `input_fn(image, device, target_size)`
 Prepares input for your model and handles device placement if needed.
 
 ```python
-def input_fn(image, device: str = "cpu"):
+def input_fn(
+    image: Image.Image, 
+    device: str = "cpu",
+    target_size: Tuple[int, int] = (640, 640)
+) -> np.ndarray:
     """
     Preprocess the input image for model inference.
     
     Args:
         image: PIL.Image object
         device: Device to place the processed input on ("cpu" or "cuda")
+        target_size: Target size for letterboxing. Defaults to (640, 640)
         
     Returns:
-        Processed input in format required by your model
+        Preprocessed image tensor ready for model inference
     """
-    # Example preprocessing for a CNN
-    import numpy as np
-    
-    # Convert to numpy array
-    img_array = np.array(image.convert("RGB"))
-    
-    # For YOLO models, typically the model itself manages the device
-    # but for PyTorch models that need tensor inputs:
-    # import torch
-    # tensor_input = torch.tensor(img_array).to(device)
-    
-    return img_array
+    # Implementation details in example code
+    return preprocessed_image
 ```
 
 #### 4. `predict_fn(image_array, model)`
 Runs inference using your model.
 
 ```python
-def predict_fn(image_array, model):
+def predict_fn(image_array: np.ndarray, model: YOLO) -> list:
     """
     Run model inference on the preprocessed input.
     
@@ -216,21 +204,25 @@ def predict_fn(image_array, model):
     Returns:
         Raw prediction results
     """
-    # Example inference
-    predictions = model(image_array)
-    return predictions
+    return model(image_array)
 ```
 
-#### 5. `output_fn(predictions)`
+#### 5. `output_fn(predictions, image, target_size)`
 Formats the results in the required format.
 
 ```python
-def output_fn(predictions):
+def output_fn(
+    predictions: list,
+    image: Image.Image,
+    target_size: Tuple[int, int] = (640, 640)
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Post-process model predictions to required format.
     
     Args:
         predictions: Output from predict_fn
+        image: Original input image
+        target_size: Target size used for letterboxing
         
     Returns:
         tuple of (class_names, confidences, bounding_boxes):
@@ -238,17 +230,8 @@ def output_fn(predictions):
           - confidences: np.ndarray[float] - Array of confidence scores
           - bounding_boxes: np.ndarray[float] with shape (N,4) containing [xmin, ymin, xmax, ymax]
     """
-    import numpy as np
-    
-    # Process your model's output to extract relevant information
-    class_indices = predictions['class_ids']
-    confidences = predictions['scores']
-    boxes = predictions['boxes']  # [xmin, ymin, xmax, ymax] format
-    
-    # Map class indices to names using CLASS_MAPPING
-    class_names = np.array([CLASS_MAPPING[idx] for idx in class_indices], dtype=str)
-    
-    return class_names, np.array(confidences, dtype=float), np.array(boxes, dtype=float)
+    # Implementation details in example code
+    return cls, conf, boxes
 ```
 
 ### manifest.json Format
@@ -257,8 +240,8 @@ The `manifest.json` file specifies your entry points:
 
 ```json
 {
-  "entry_point": "inference.py",
-  "model_file": "model.pt"
+    "entry_point": "inference.py",
+    "model_file": "yolov9t.pt"
 }
 ```
 
@@ -333,7 +316,7 @@ aws s3 cp model_package.tar.gz "PRESIGNED_URL_HERE"
 
 ### Step 4: Submit an Evaluation Job
 
-Once you have uploaded a model, you may submit a job with your desired context using the model package URI you received from the presigned URL:
+Once you have uploaded a model, you may submit a job with your desired context:
 
 ```python
 def submit_job(api_key, model_package_uri, target_classes, context_description):
@@ -348,20 +331,20 @@ def submit_job(api_key, model_package_uri, target_classes, context_description):
     return response.json()["job_id"]
 
 # Usage
-target_classes = ["dark_brown_cherry", "green_cherry", "red_cherry"]
+target_classes = ["snowboard", "skateboard", "frisbee"]
 context = (
-            "Evaluate cherry detection in outdoor orchards with varying lighting conditions "
-            "including direct sunlight, overcast, and dawn/dusk. Include scenarios with cherries "
-            "partially hidden by leaves, different stages of ripeness, and multiple viewing angles. "
-            "Test with both close-up and distant views of cherry clusters."
-        )
+    "Test the Yolo v9 Tiny model at skate parks, snow resorts, and public parks "
+    "during different times of day and weather conditions. Generate test scenarios "
+    "with people actively using the equipment as well as scenes where multiple "
+    "objects are scattered around at various distances from the camera."
+)
 job_id = submit_job(API_KEY, s3_uri, target_classes, context)
 ```
 
 #### API Parameters Explained
 
 - **s3_model_package_uri**: The S3 URI returned from the presigned URL response, which identifies your uploaded model package
-- **target_classes**: Array of class names that your model should be tested on. Must be a subset of the names in the CLASS_MAPPING dictionary from your inference.py
+- **target_classes**: Array of class names that your model should be tested on. Must be a subset of the names in the CLASS_NAMES dictionary from your inference.py
 - **context_description**: Natural language description of the contexts where you want your model evaluated (see below)
 
 ### Creating Effective Context Descriptions
@@ -455,7 +438,7 @@ When using the `/job-status` endpoint with a completed job, you'll receive a res
 Common issues and solutions:
 
 - **Missing functions**: Ensure inference.py implements all required functions
-- **Class mapping**: Ensure your CLASS_MAPPING includes all target_classes
+- **Class mapping**: Ensure your CLASS_NAMES includes all target_classes
 - **Size limits**: Keep your model package under 4GB (packages larger than 4GB will be rejected)
 - **Device parameters**: Make sure to correctly implement the `device` parameter in both `model_fn` and `input_fn` functions
 - **Model movement**: Ensure your model is properly moved to the specified device using `.to(device)` for PyTorch models during model loading

@@ -70,7 +70,7 @@ def get_presigned_url():
 def submit_job(model_package_uri):
     data = {
         "s3_model_package_uri": model_package_uri,
-        "target_classes": ["snowboard", "skateboard", "frisbee"], # Classes to be tested (from the CLASS_MAPPING in your inference script)
+        "target_classes": ["snowboard", "skateboard", "frisbee"], # Classes to be tested (from the CLASS_NAMES in your inference script)
         "context_description": (
             "Test the Yolo v9 Tiny model at skate parks, snow resorts, and public parks during different times of day and weather conditions. "
             "Generate test scenarios with people actively using the equipment as well as scenes where multiple objects are scattered "

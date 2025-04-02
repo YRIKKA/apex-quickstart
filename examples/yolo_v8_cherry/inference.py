@@ -1,6 +1,8 @@
 """
 This script provides an example of using a YOLO model for object detection inference.
 
+Model weights: https://huggingface.co/rgautroncgiar/croppie_coffee_ug
+
 Components:
 1. CLASS_NAMES: A dictionary mapping class indices to human-readable class names.
 2. model_fn: Loads the YOLO model from the specified directory.
@@ -28,8 +30,8 @@ CLASS_NAMES = {
 }
 
 
-def model_fn(model_dir: str, device: str = "cpu") -> YOLO:
-    model = YOLO(model_dir)
+def model_fn(model_path: str, device: str = "cpu") -> YOLO:
+    model = YOLO(model_path)
     model.to(device)
     return model
 
@@ -56,28 +58,49 @@ def predict_fn(image_array: np.ndarray, model: YOLO) -> list:
     return model(image_array)
 
 def output_fn(
-    predictions: list
+    predictions: list,
+    image: Image.Image
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Convert YOLO results into (class_names, confidences, bounding_boxes).
-    - class_names: np.ndarray[str]
-    - confidences: np.ndarray[float]
-    - bounding_boxes: np.ndarray[float] shape=(N,4) [xmin, ymin, xmax, ymax]
+    Convert YOLO results into nested arrays of (class_names, confidences, bounding_boxes).
+    
+    Args:
+        predictions: List of YOLO Results objects
+        image: Original PIL Image
+        
+    Returns:
+        Tuple of 3 numpy arrays:
+        - class_names: np.ndarray[np.ndarray[str]] - Array of arrays of class name strings
+        - confidences: np.ndarray[np.ndarray[float]] - Array of arrays of confidence scores
+        - bounding_boxes: np.ndarray[np.ndarray[float]] with shape (N,M,4) containing [xmin, ymin, xmax, ymax]
     """
-    class_list, conf_list, box_list = [], [], []
+    # Initialize lists to store results for each prediction/image
+    all_classes = []
+    all_confidences = []
+    all_boxes = []
 
     for result in predictions:
+        # For each prediction, create separate lists
+        image_classes = []
+        image_confidences = []
+        image_boxes = []
+        
         if hasattr(result.boxes, "data"):
             boxes = result.boxes.data.cpu().numpy()
             for x1, y1, x2, y2, conf, cls in boxes.tolist():
-                class_list.append(CLASS_NAMES.get(int(cls), "unknown"))
-                conf_list.append(conf)
-                box_list.append([x1, y1, x2, y2])
+                image_classes.append(CLASS_NAMES.get(int(cls), "unknown"))
+                image_confidences.append(conf)
+                image_boxes.append([x1, y1, x2, y2])
+        
+        # Convert to numpy arrays and append to the main lists
+        all_classes.append(np.array(image_classes, dtype=str))
+        all_confidences.append(np.array(image_confidences, dtype=float))
+        all_boxes.append(np.array(image_boxes, dtype=float))
 
     return (
-        np.array(class_list, dtype=str),
-        np.array(conf_list, dtype=float),
-        np.array(box_list, dtype=float)
+        np.array(all_classes, dtype=object),
+        np.array(all_confidences, dtype=object),
+        np.array(all_boxes, dtype=object)
     )
 
 
@@ -85,7 +108,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     # Load the model
-    my_model_path = "yolov8_cherry_detection_example/model.pt"
+    my_model_path = "examples/yolo_v8_cherry/model.pt"
     model = model_fn(my_model_path, device)
 
     # Process an image
@@ -96,7 +119,7 @@ if __name__ == "__main__":
     preds = predict_fn(model_input, model)
 
     # Process the results
-    classes, confidences, boxes = output_fn(preds)
+    classes, confidences, boxes = output_fn(preds, img)
 
     print("Classes:", classes)
     print("Confidences:", confidences)

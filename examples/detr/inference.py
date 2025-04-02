@@ -1,5 +1,7 @@
 """
 This script provides an example of using a DETR model for object detection inference from facebook/detr-resnet-50.
+
+Model weights: https://huggingface.co/facebook/detr-resnet-50
 """
 
 from typing import Tuple
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     img = Image.new("RGB", (800, 600), (255, 255, 255))
     
     # Load model and processor
-    model_path = "detr_example/model.safetensors"
+    model_path = "examples/detr/model.safetensors"
     model = model_fn(model_path, device)
     
     # Process image

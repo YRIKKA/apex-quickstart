@@ -202,7 +202,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     # Load the model
-    my_model_path = "yolo_v9_tiny/yolov9t.pt"
+    my_model_path = "examples/yolo_v9_tiny/yolov9t.pt"
     model = model_fn(my_model_path, device)
 
     # Process an example image

@@ -1,11 +1,13 @@
-from typing import Tuple
-
-import numpy as np
-import torch
+"""
+This script provides an example of using a Yolo V9 Tiny model for object detection inference from https://docs.ultralytics.com/models/yolov9/#usage-examples.
+"""
+from typing import Tuple, List
 from PIL import Image
+import numpy as np
 from ultralytics import YOLO
+import torch
 
-
+# Complete and total class mapping defined at the top
 CLASS_NAMES = {
     0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane',
     5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light',
@@ -28,32 +30,11 @@ CLASS_NAMES = {
 }
 
 def model_fn(weights_file: str, device: str = "cpu"):
-    """
-    Load a YOLO model from weights file and move it to specified device.
-
-    Args:
-        weights_file (str): Path to the YOLO model weights file
-        device (str, optional): Device to load model to. Defaults to "cpu"
-
-    Returns:
-        YOLO: Loaded YOLO model instance
-    """
     model = YOLO(weights_file)
     model.to(device)
     return model
 
-def _letterbox(image, new_shape=(640, 640), color=(114, 114, 114)):
-    """
-    Helper function to resize and pad an image while maintaining aspect ratio.
-
-    Args:
-        image (PIL.Image): Input image to resize and pad
-        new_shape (tuple or int, optional): Target size. Defaults to (640, 640)
-        color (tuple, optional): Padding color (RGB). Defaults to (114, 114, 114)
-
-    Returns:
-        PIL.Image: Resized and padded image
-    """
+def letterbox(image, new_shape=(640, 640), color=(114, 114, 114)):
     # Convert to RGB just in case
     image = image.convert('RGB')
     shape = image.size  # (width, height)
@@ -84,34 +65,19 @@ def input_fn(
         image: Image.Image, 
         device: str = "cpu",
         target_size: Tuple[int, int] = (640, 640)
+
     ) -> np.ndarray:
     """
-    Preprocess a PIL Image for YOLO inference by resizing, padding, and converting to tensor.
-
-    Args:
-        image (PIL.Image): Input image to preprocess
-        device (str, optional): Device to place tensor on. Defaults to "cpu"
-        target_size (Tuple[int, int], optional): Target size for letterboxing. Defaults to (640, 640)
-
-    Returns:
-        torch.Tensor: Preprocessed image tensor with shape (1, 3, H, W), normalized to [0, 1]
-
-    Raises:
-        ValueError: If input is not a PIL.Image
+    Convert a PIL.Image into a NumPy array ready for YOLO inference.
     """
-    if not isinstance(image, Image.Image):
-        raise ValueError("Input must be a PIL image.")
-    
     # Letterbox image to a shape divisible by 32 (assumed to be (640, 640))
-    image_letterboxed = _letterbox(image, target_size)
-
+    image_letterboxed = letterbox(image, target_size)
     # Convert to numpy array
     img_array = np.array(image_letterboxed, dtype=np.float32)
     # Normalize to 0-1
     img_array /= 255.0
     # Transpose HWC to CHW
     img_array = img_array.transpose(2, 0, 1)
-
     # Create a batch dimension
     pixel_values = torch.from_numpy(img_array).unsqueeze(0)
 
@@ -119,14 +85,7 @@ def input_fn(
 
 def predict_fn(image_array: np.ndarray, model: YOLO) -> list:
     """
-    Run YOLO model inference on preprocessed image.
-
-    Args:
-        image_array (np.ndarray): Preprocessed image tensor from input_fn
-        model (YOLO): Loaded YOLO model instance
-
-    Returns:
-        list: List of YOLO Results objects containing detections
+    Run inference and return YOLO Results objects.
     """
     return model(image_array)
 
@@ -134,9 +93,10 @@ def output_fn(
     predictions: list,
     image: Image.Image,
     target_size: Tuple[int, int] = (640, 640)
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
     """
-    Postprocess YOLO predictions by converting to original image coordinates.
+    Postprocess YOLO model predictions into class labels, confidences, and bounding boxes.
+    Undoes letterbox resizing.
 
     Args:
         predictions (list): Raw predictions from YOLO model
@@ -150,7 +110,6 @@ def output_fn(
             - List where each element is an array of bounding boxes (shape Nx4) in (x1, y1, x2, y2) 
               format in original image coordinates for each batch item
     """
-    target_size = (640, 640)
     original_w, original_h = image.size
 
     if isinstance(target_size, int):
@@ -201,11 +160,11 @@ def output_fn(
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    # Load the model
+    # Load model
     my_model_path = "examples/yolo_v9_tiny/yolov9t.pt"
     model = model_fn(my_model_path, device)
 
-    # Process an example image
+    # Process image
     img = Image.new("RGB", (640, 640), (255, 255, 255))
     model_input = input_fn(img, device)
 
@@ -214,7 +173,4 @@ if __name__ == "__main__":
 
     # Process the results
     classes, confidences, boxes = output_fn(preds, img)
-
-    print("Classes:", classes)
-    print("Confidences:", confidences)
-    print("Boxes:", boxes)
+    print(f"Classes: {classes}, Confidences: {confidences}, Boxes: {boxes}")

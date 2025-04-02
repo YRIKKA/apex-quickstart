@@ -4,127 +4,105 @@ This script provides an example of using a DETR model for object detection infer
 Model weights: https://huggingface.co/facebook/detr-resnet-50
 """
 
-from typing import Tuple
-import numpy as np
-import torch
+from typing import Tuple, List
 from PIL import Image
-from transformers import DetrConfig, DetrForObjectDetection, DetrImageProcessor
+import torch
+import numpy as np
+from transformers import DetrForObjectDetection, DetrImageProcessor, DetrConfig
 from safetensors.torch import load_file
 
-# COCO classes mapping
+# Complete and total class mapping defined at the top
 CLASS_NAMES = {
-    1: "person", 2: "bicycle", 3: "car", 4: "motorcycle", 5: "airplane",
-    6: "bus", 7: "train", 8: "truck", 9: "boat", 10: "traffic light",
-    11: "fire hydrant", 13: "stop sign", 14: "parking meter", 15: "bench",
-    16: "bird", 17: "cat", 18: "dog", 19: "horse", 20: "sheep", 21: "cow",
-    22: "elephant", 23: "bear", 24: "zebra", 25: "giraffe", 27: "backpack",
-    28: "umbrella", 31: "handbag", 32: "tie", 33: "suitcase", 34: "frisbee",
-    35: "skis", 36: "snowboard", 37: "sports ball", 38: "kite",
-    39: "baseball bat", 40: "baseball glove", 41: "skateboard", 42: "surfboard",
-    43: "tennis racket", 44: "bottle", 46: "wine glass", 47: "cup", 48: "fork",
-    49: "knife", 50: "spoon", 51: "bowl", 52: "banana", 53: "apple",
-    54: "sandwich", 55: "orange", 56: "broccoli", 57: "carrot", 58: "hot dog",
-    59: "pizza", 60: "donut", 61: "cake", 62: "chair", 63: "couch",
-    64: "potted plant", 65: "bed", 67: "dining table", 70: "toilet", 72: "tv",
-    73: "laptop", 74: "mouse", 75: "remote", 76: "keyboard", 77: "cell phone",
-    78: "microwave", 79: "oven", 80: "toaster", 81: "sink", 82: "refrigerator",
-    84: "book", 85: "clock", 86: "vase", 87: "scissors", 88: "teddy bear",
-    89: "hair drier", 90: "toothbrush"
+    0: 'N/A', 1: 'person', 2: 'bicycle', 3: 'car', 4: 'motorcycle',
+    5: 'airplane', 6: 'bus', 7: 'train', 8: 'truck', 9: 'boat',
+    10: 'traffic light', 11: 'fire hydrant', 12: 'N/A', 13: 'stop sign',
+    14: 'parking meter', 15: 'bench', 16: 'bird', 17: 'cat', 18: 'dog',
+    19: 'horse', 20: 'sheep', 21: 'cow', 22: 'elephant', 23: 'bear',
+    24: 'zebra', 25: 'giraffe', 26: 'N/A', 27: 'backpack', 28: 'umbrella',
+    29: 'N/A', 30: 'N/A', 31: 'handbag', 32: 'tie', 33: 'suitcase',
+    34: 'frisbee', 35: 'skis', 36: 'snowboard', 37: 'sports ball', 38: 'kite',
+    39: 'baseball bat', 40: 'baseball glove', 41: 'skateboard', 42: 'surfboard',
+    43: 'tennis racket', 44: 'bottle', 45: 'N/A', 46: 'wine glass', 47: 'cup',
+    48: 'fork', 49: 'knife', 50: 'spoon', 51: 'bowl', 52: 'banana', 53: 'apple',
+    54: 'sandwich', 55: 'orange', 56: 'broccoli', 57: 'carrot', 58: 'hot dog',
+    59: 'pizza', 60: 'donut', 61: 'cake', 62: 'chair', 63: 'couch',
+    64: 'potted plant', 65: 'bed', 66: 'N/A', 67: 'dining table', 68: 'N/A',
+    69: 'N/A', 70: 'toilet', 71: 'N/A', 72: 'tv', 73: 'laptop', 74: 'mouse',
+    75: 'remote', 76: 'keyboard', 77: 'cell phone', 78: 'microwave', 79: 'oven',
+    80: 'toaster', 81: 'sink', 82: 'refrigerator', 83: 'N/A', 84: 'book',
+    85: 'clock', 86: 'vase', 87: 'scissors', 88: 'teddy bear', 89: 'hair drier',
+    90: 'toothbrush'
 }
 
-def model_fn(weights_file: str, device: str = "cpu") -> Tuple[DetrForObjectDetection, DetrImageProcessor]:
+def model_fn(weights_file: str, device: str = "cpu") -> DetrForObjectDetection:
     """
-    Load the DETR model and processor from local files.
-    
-    Args:
-        weights_file: Path to the model weights file
-        device: Device to load model to ("cpu" or "cuda")
-        
-    Returns:
-        Tuple of (model, processor)
+    Loads the DETR model and processor using a local safetensors weights file.
     """
-    # Load a default configuration (here we use the facebook/detr-resnet-50 config)
     config = DetrConfig.from_pretrained("facebook/detr-resnet-50")
-    # Instantiate the model with the configuration
     model = DetrForObjectDetection(config)
-    # Load the state dict from the safetensors file
     state_dict = load_file(weights_file)
-    # Load the state dict into the model
     model.load_state_dict(state_dict)
-    # Load the image processor (remains unchanged)
-    processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
     model.to(device)
-    return model, processor
 
-def input_fn(image: Image.Image, device: str = "cpu") -> np.ndarray:
-    """
-    Convert PIL image to numpy array.
-    
-    Args:
-        image: PIL Image to process
-        device: Device to place tensors on
-        
-    Returns:
-        Numpy array of the image
-    """
-    return np.array(image)
+    return model
 
-def predict_fn(image_array: np.ndarray, model: Tuple[DetrForObjectDetection, DetrImageProcessor]) -> dict:
+def input_fn(image: Image.Image, device: str = "cpu") -> torch.Tensor:
     """
-    Run DETR inference using model and processor.
-    
-    Args:
-        image_array: Numpy array from input_fn
-        model: Tuple of (model, processor) from model_fn
-        
-    Returns:
-        Dictionary containing processed predictions
+    Preprocesses a PIL image using the processor and returns pixel values tensor.
     """
-    detr_model, processor = model
-    
-    # Process image using the processor
-    inputs = processor(images=image_array, return_tensors="pt")
-    inputs = {k: v.to(detr_model.device) for k, v in inputs.items()}
-    
-    # Run inference
-    outputs = detr_model(**inputs)
-    
-    # Post-process outputs
-    target_sizes = torch.tensor([image_array.shape[:2][::-1]])
-    results = processor.post_process_object_detection(
-        outputs, 
-        target_sizes=target_sizes, 
-        threshold=0.9
-    )[0]
-    
-    return results
+    if not isinstance(image, Image.Image):
+        raise ValueError("Input must be a PIL image.")
+    processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
 
-def output_fn(
-    predictions: dict,
-    image: Image.Image
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    inputs = processor(images=image, return_tensors="pt")
+    return inputs["pixel_values"].to(device)
+
+def predict_fn(pixel_values: torch.Tensor, model: DetrForObjectDetection) -> dict:
     """
-    Convert DETR results into required format.
-    
-    Args:
-        predictions: Results from predict_fn
-        image: Original input image
-        
-    Returns:
-        Tuple of (class_names, confidences, boxes) where:
-        - class_names: np.ndarray of str class names
-        - confidences: np.ndarray of float confidence scores
-        - boxes: np.ndarray of float boxes in [x1,y1,x2,y2] format
+    Runs inference on the image tensor.
     """
-    # Convert to numpy arrays - using detach() to remove gradient tracking
-    scores = predictions["scores"].detach().cpu().numpy()
-    labels = predictions["labels"].detach().cpu().numpy()
-    boxes = predictions["boxes"].detach().cpu().numpy()
+    with torch.no_grad():
+        outputs = model(pixel_values)
+    return outputs
+
+def output_fn(predictions: dict, image: Image.Image) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+    """
+    Post-processes the DETR outputs and returns class names, confidence scores, and pixel-level boxes.
+    """
+    cls = []
+    conf = []
+    boxes = []
+    processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50",
+                                                   revision="no_timm")
+    processed_results = processor.post_process_object_detection(predictions, threshold=0.5)[0]
+
+    cls_, conf_, box_ = [], [], []
+
+    n = processed_results['scores'].shape[0]
+    for i in range(n):
+        cls_.append(CLASS_NAMES[processed_results['labels'][i].item()])
+        conf_.append(processed_results['scores'][i].item())
+        box_.append(processed_results['boxes'][i].detach().cpu().numpy())
+    # Convert lists to numpy arrays
+    cls.append(np.array(cls_))
+    conf.append(np.array(conf_))
+    boxes.append(np.array(box_))
     
-    # Convert label indices to class names
-    class_names = np.array([CLASS_NAMES[label.item()] for label in labels])
+    # Convert normalized boxes to pixel coordinates
+    image_width, image_height = image.size
+
+    converted_boxes = []
+    for box_set in boxes:
+        pixel_boxes = []
+        for box in box_set:
+            ymin = max(0, box[1] * image_height)
+            xmin = max(0, box[0] * image_width)
+            ymax = min(image_height, box[3] * image_height)
+            xmax = min(image_width, box[2] * image_width)
+            pixel_boxes.append([xmin, ymin, xmax, ymax])
+        converted_boxes.append(np.array(pixel_boxes))
     
-    return class_names, scores, boxes
+    return cls, conf, converted_boxes
 
 
 if __name__ == "__main__":
@@ -133,7 +111,7 @@ if __name__ == "__main__":
     # Create a test image
     img = Image.new("RGB", (800, 600), (255, 255, 255))
     
-    # Load model and processor
+    # Load model
     model_path = "examples/detr/model.safetensors"
     model = model_fn(model_path, device)
     
@@ -145,7 +123,5 @@ if __name__ == "__main__":
     
     # Get final outputs
     classes, confidences, boxes = output_fn(results, img)
-    
-    print("\nDetections:")
-    for cls, conf, box in zip(classes, confidences, boxes):
-        print(f"Class: {cls}, Confidence: {conf:.3f}, Box: {box.tolist()}")
+
+    print(f"Classes: {classes}, Confidences: {confidences}, Boxes: {boxes}")

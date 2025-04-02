@@ -46,10 +46,10 @@ info:
              - `predictions` - Output from predict_fn
              - `image` - Original input PIL.Image
              - `target_size` (Optional[Tuple[int, int]]) - Optional target size used for letterboxing
-           - **Output**: Tuple of 3 numpy arrays:
-             - `class_names`: np.ndarray[np.ndarray[str]] - Array of arrays of class name strings
-             - `confidences`: np.ndarray[np.ndarray[float]] - Array of arrays of confidence scores
-             - `bounding_boxes`: np.ndarray[np.ndarray[float]] with shape (N,M,4) containing [xmin, ymin, xmax, ymax]
+           - **Output**: Tuple of 3 lists of numpy arrays:
+             - `class_names`: List[np.ndarray[str]] - List of arrays containing class name strings
+             - `confidences`: List[np.ndarray[float]] - List of arrays containing confidence scores
+             - `bounding_boxes`: List[np.ndarray[float]] with shape (num_boxes, 4) containing [xmin, ymin, xmax, ymax] in pixels
        - Define a `CLASS_NAMES` dictionary in your script that maps class indices to names
        - Create a `manifest.json` file that specifies your entry point and model file names
        - Include your model weights file (e.g., `model.pt`)

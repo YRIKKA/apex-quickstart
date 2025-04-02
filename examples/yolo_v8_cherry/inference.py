@@ -15,7 +15,7 @@ Note:
 - The model_fn must take the full model path as an argument and return a loaded model object.
 """
 
-from typing import Tuple
+from typing import Tuple, List
 import numpy as np
 import torch
 from PIL import Image
@@ -28,7 +28,6 @@ CLASS_NAMES = {
     2: "red_cherry",
     3: "yellow_cherry"
 }
-
 
 def model_fn(model_path: str, device: str = "cpu") -> YOLO:
     model = YOLO(model_path)
@@ -60,7 +59,7 @@ def predict_fn(image_array: np.ndarray, model: YOLO) -> list:
 def output_fn(
     predictions: list,
     image: Image.Image
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
     """
     Convert YOLO results into nested arrays of (class_names, confidences, bounding_boxes).
     
@@ -69,10 +68,13 @@ def output_fn(
         image: Original PIL Image
         
     Returns:
-        Tuple of 3 numpy arrays:
-        - class_names: np.ndarray[np.ndarray[str]] - Array of arrays of class name strings
-        - confidences: np.ndarray[np.ndarray[float]] - Array of arrays of confidence scores
-        - bounding_boxes: np.ndarray[np.ndarray[float]] with shape (N,M,4) containing [xmin, ymin, xmax, ymax]
+        Tuple of 3 lists:
+        - class_names: List[np.ndarray[str]] - List of numpy arrays of class name strings,
+          one array per image.
+        - confidences: List[np.ndarray[float]] - List of numpy arrays of confidence scores,
+          one array per image.
+        - bounding_boxes: List[np.ndarray[float]] with shape (num_boxes, 4) containing [xmin, ymin, xmax, ymax]
+          for each image.
     """
     # Initialize lists to store results for each prediction/image
     all_classes = []
@@ -97,11 +99,7 @@ def output_fn(
         all_confidences.append(np.array(image_confidences, dtype=float))
         all_boxes.append(np.array(image_boxes, dtype=float))
 
-    return (
-        np.array(all_classes, dtype=object),
-        np.array(all_confidences, dtype=object),
-        np.array(all_boxes, dtype=object)
-    )
+    return all_classes, all_confidences, all_boxes
 
 
 if __name__ == "__main__":

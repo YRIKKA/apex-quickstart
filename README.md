@@ -1,4 +1,4 @@
-# YRIKKA APEX: Automated Context-Based Object Detection Model Evaluation
+# Adversarial Probing & Evaluation of Exploits (APEX): Automated Context-Based Object Detection Model Evaluation
 
 This repository provides sample code and examples for using YRIKKA's APEX API - an automated context-based evaluation system for object detection models. APEX allows you to test your models in specific scenarios by describing the context in natural language.
 
@@ -6,9 +6,13 @@ This repository provides sample code and examples for using YRIKKA's APEX API - 
 
 **[🔑 Sign up for an APEX API key](https://apex.yrikka.com/login?client_id=3fn9ks2vmp3gdis9jvts464v31&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fyrikka.com%2F)**
 
-**[📚 View the complete API documentation](https://docs.yrikka.com/apex)**
+**[📚 View the complete API documentation](https://yrikka.github.io/apex-quickstart/)**
 
 **[🌐 Visit YRIKKA](https://yrikka.com)**
+
+## Quota Limits
+
+Our initial release is free, allowing users to submit up to 8 jobs per day. After reaching this limit, further submissions will be denied. Please plan your usage accordingly.
 
 ## Table of Contents
 
@@ -18,10 +22,10 @@ This repository provides sample code and examples for using YRIKKA's APEX API - 
   - [2. Prepare Your Model Package](#2-prepare-your-model-package)
 - [Model Package Structure](#model-package-structure)
   - [Required Files](#required-files)
-  - [Supported Libraries and Dependencies](#supported-libraries-and-dependencies)
   - [Example Implementation](#example-implementation)
   - [inference.py Requirements](#inferencepy-requirements)
   - [manifest.json Format](#manifestjson-format)
+- [Supported Libraries](#supported-libraries)
 - [Creating Effective Context Descriptions](#creating-effective-context-descriptions)
 - [Using the API](#using-the-api)
   - [Step 1: Package Your Model](#step-1-package-your-model)
@@ -86,33 +90,6 @@ yolo_v9_tiny/
 > 4. Create a tarball of your directory following the instructions below
 >
 > This approach can be adapted for other object detection architectures with minimal changes to the inference functions.
-
-### Supported Libraries and Dependencies
-
-APEX supports the following libraries in your inference script:
-
-| Library | Version |
-|---------|---------|
-| PyTorch | 2.0.0+ |
-| TorchVision | 0.15.0+ |
-| TensorFlow | 2.10.0+ |
-| HuggingFace Transformers | 4.25.0+ |
-| HuggingFace Hub | 0.12.0+ |
-| ONNX Runtime | 1.13.1+ |
-| Ultralytics (YOLO) | 8.0.0+ |
-| NumPy | 1.23.0+ |
-| OpenCV | 4.6.0+ |
-| Pillow (PIL) | 9.3.0+ |
-| SciPy | 1.9.0+ |
-| Scikit-learn | 1.1.0+ |
-
-Notes:
-- Your inference script **must only use** the libraries listed above in the specified versions
-- Additional dependencies are not currently supported
-- If your inference script imports libraries not in this list, your evaluation job will fail
-- Maximum package size must not exceed 4GB
-
-> 🔮 **Coming Soon**: In a future update, we plan to support custom dependencies via requirements.txt files.
 
 ### Example Implementation
 
@@ -234,6 +211,66 @@ The `manifest.json` file specifies your entry points:
 }
 ```
 
+## Supported Libraries
+
+Your `inference.py` script can use a wide range of preinstalled libraries commonly used for machine learning, deep learning, computer vision, and NLP.
+
+### Deep Learning Frameworks
+
+- PyTorch (2.4+) and Torchvision (0.19+)
+- TensorFlow (2.19+) and Keras (3.x)
+- PyTorch Lightning (2.x)
+- Support for model libraries such as Timm, YOLOv8, and EfficientNet
+
+### Transformers & NLP
+
+- Hugging Face Transformers (4.37+) and Datasets (2.19+)
+- Tokenization tools: tokenizers, sentencepiece
+
+### Traditional ML & Statistics
+
+- Scikit-learn (1.3+), Statsmodels (0.14)
+
+### Computer Vision
+
+- OpenCV (4.8+), albumentations, scikit-image, Pillow, pycocotools, imageio
+
+### Data & Evaluation Utilities
+
+- numpy, pandas, scipy, matplotlib, seaborn
+- umap-learn, torchmetrics, fiftyone
+
+⚡ **Note**: The current public API runs in a container based on CUDA 12.1, optimized for GPU-accelerated inference using PyTorch and TensorFlow.
+
+🙋‍♀️ **Don't see a package you need?** No problem — contact us to learn about getting your own private API environment with custom dependencies.
+
+## Creating Effective Context Descriptions
+
+When submitting an evaluation job, the `context_description` parameter is crucial as it determines what scenarios your model will be tested in. Here are guidelines for creating effective context descriptions:
+
+#### Best Practices
+
+- **Be specific and detailed** about the environments where your model will be deployed
+- Include information about **lighting conditions** (bright sunlight, dim indoor, night, etc.)
+- Specify **background variations** that might be present (foliage, urban settings, etc.)
+- Mention **object variations** (size, color, orientation, partial occlusion)
+- Describe **camera angles** and distances that are relevant
+- Include **weather conditions** if applicable (rain, fog, snow)
+
+#### Examples
+
+**Basic description:**
+```
+"Test my cherry detection model."
+```
+
+**Improved description:**
+```
+"Evaluate cherry detection in outdoor orchards with varying lighting conditions including direct sunlight, overcast, and dawn/dusk. Include scenarios with cherries partially hidden by leaves, different stages of ripeness, and multiple viewing angles. Test with both close-up and distant views of cherry clusters."
+```
+
+The more specific your description, the more targeted and valuable your evaluation results will be.
+
 ## Using the API
 
 Once you have created your inference script and prepared your model files, you'll need to follow these steps to evaluate your model with APEX. A full example implementation is provided in the `demo.py` file in this repository. Below, we break down each step:
@@ -336,33 +373,6 @@ job_id = submit_job(API_KEY, s3_uri, target_classes, context)
 - **target_classes**: Array of class names that your model should be tested on. Must be a subset of the names in the CLASS_NAMES dictionary from your inference.py
 - **context_description**: Natural language description of the contexts where you want your model evaluated (see below)
 
-### Creating Effective Context Descriptions
-
-When submitting an evaluation job, the `context_description` parameter is crucial as it determines what scenarios your model will be tested in. Here are guidelines for creating effective context descriptions:
-
-#### Best Practices
-
-- **Be specific and detailed** about the environments where your model will be deployed
-- Include information about **lighting conditions** (bright sunlight, dim indoor, night, etc.)
-- Specify **background variations** that might be present (foliage, urban settings, etc.)
-- Mention **object variations** (size, color, orientation, partial occlusion)
-- Describe **camera angles** and distances that are relevant
-- Include **weather conditions** if applicable (rain, fog, snow)
-
-#### Examples
-
-**Basic description:**
-```
-"Test my cherry detection model."
-```
-
-**Improved description:**
-```
-"Evaluate cherry detection in outdoor orchards with varying lighting conditions including direct sunlight, overcast, and dawn/dusk. Include scenarios with cherries partially hidden by leaves, different stages of ripeness, and multiple viewing angles. Test with both close-up and distant views of cherry clusters."
-```
-
-The more specific your description, the more targeted and valuable your evaluation results will be.
-
 ### Step 5: Check Job Status and Get Results
 
 Monitor the job status and retrieve results when complete:
@@ -409,7 +419,6 @@ When using the `/job-status` endpoint with a completed job, you'll receive a res
 ```json
 {
   "status": "SUCCESS",
-  "message": "Evaluation completed successfully.",
   "results": {
     "Aggregate": {
       "Precision": 0.812,
@@ -464,3 +473,7 @@ Common issues and solutions:
 
 - API Documentation: [APEX API Documentation](https://docs.yrikka.com/apex)
 - Contact Support: help@yrikka.com
+
+## API Documentation
+
+Our API documentation is available at [https://yrikka.github.io/apex-quickstart/](https://yrikka.github.io/apex-quickstart/)

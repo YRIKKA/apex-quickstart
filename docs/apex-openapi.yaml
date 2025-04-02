@@ -30,22 +30,26 @@ info:
              - `model_dir` (str) - Path to the directory containing your model weights
              - `device` (str) - Either 'cpu' or 'cuda' - your function is responsible for moving the model to this device
            - **Output**: Your loaded model object (can be any format your predict_fn accepts)
-         - `input_fn(image, device)`: Prepares input for your model
+         - `input_fn(image, device, target_size)`: Prepares input for your model
            - **Input**: 
              - `image` (PIL.Image) - A PIL Image object
              - `device` (str) - Either 'cpu' or 'cuda' - your function is responsible for moving input data to this device
+             - `target_size` (Tuple[int, int]) - Target size for letterboxing, defaults to (640, 640)
            - **Output**: Processed input in the format your model requires (e.g., numpy array)
          - `predict_fn(image_array, model)`: Runs inference
            - **Input**: 
              - `image_array` - Output from input_fn
              - `model` - Model object returned by model_fn
            - **Output**: Raw prediction results (can be any format your output_fn accepts)
-         - `output_fn(predictions)`: Formats results
-           - **Input**: `predictions` - Output from predict_fn
+         - `output_fn(predictions, image, target_size)`: Formats results
+           - **Input**: 
+             - `predictions` - Output from predict_fn
+             - `image` - Original input PIL.Image
+             - `target_size` (Tuple[int, int]) - Target size used for letterboxing
            - **Output**: Tuple of 3 numpy arrays:
-             - `class_names`: np.ndarray[str] - Array of class name strings
-             - `confidences`: np.ndarray[float] - Array of confidence scores
-             - `bounding_boxes`: np.ndarray[float] with shape (N,4) containing [xmin, ymin, xmax, ymax]
+             - `class_names`: np.ndarray[np.ndarray[str]] - Array of arrays of class name strings
+             - `confidences`: np.ndarray[np.ndarray[float]] - Array of arrays of confidence scores
+             - `bounding_boxes`: np.ndarray[np.ndarray[float]] with shape (N,M,4) containing [xmin, ymin, xmax, ymax]
        - Define a `CLASS_MAPPING` dictionary in your script that maps class indices to names
        - Create a `manifest.json` file that specifies your entry point and model file names
        - Include your model weights file (e.g., `model.pt`)

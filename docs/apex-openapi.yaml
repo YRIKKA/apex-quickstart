@@ -30,27 +30,27 @@ info:
              - `model_dir` (str) - Path to the directory containing your model weights
              - `device` (str) - Either 'cpu' or 'cuda' - your function is responsible for moving the model to this device
            - **Output**: Your loaded model object (can be any format your predict_fn accepts)
-         - `input_fn(image, device, target_size)`: Prepares input for your model
+         - `input_fn(image, device, target_size=None)`: Prepares input for your model
            - **Input**: 
              - `image` (PIL.Image) - A PIL Image object
              - `device` (str) - Either 'cpu' or 'cuda' - your function is responsible for moving input data to this device
-             - `target_size` (Tuple[int, int]) - Target size for letterboxing, defaults to (640, 640)
+             - `target_size` (Optional[Tuple[int, int]]) - Optional target size for letterboxing
            - **Output**: Processed input in the format your model requires (e.g., numpy array)
          - `predict_fn(image_array, model)`: Runs inference
            - **Input**: 
              - `image_array` - Output from input_fn
              - `model` - Model object returned by model_fn
            - **Output**: Raw prediction results (can be any format your output_fn accepts)
-         - `output_fn(predictions, image, target_size)`: Formats results
+         - `output_fn(predictions, image, target_size=None)`: Formats results
            - **Input**: 
              - `predictions` - Output from predict_fn
              - `image` - Original input PIL.Image
-             - `target_size` (Tuple[int, int]) - Target size used for letterboxing
+             - `target_size` (Optional[Tuple[int, int]]) - Optional target size used for letterboxing
            - **Output**: Tuple of 3 numpy arrays:
              - `class_names`: np.ndarray[np.ndarray[str]] - Array of arrays of class name strings
              - `confidences`: np.ndarray[np.ndarray[float]] - Array of arrays of confidence scores
              - `bounding_boxes`: np.ndarray[np.ndarray[float]] with shape (N,M,4) containing [xmin, ymin, xmax, ymax]
-       - Define a `CLASS_MAPPING` dictionary in your script that maps class indices to names
+       - Define a `CLASS_NAMES` dictionary in your script that maps class indices to names
        - Create a `manifest.json` file that specifies your entry point and model file names
        - Include your model weights file (e.g., `model.pt`)
     
@@ -116,6 +116,11 @@ paths:
                 s3_uri: "s3://yrikka-models/user123/model_package_12345.tar.gz"
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Quota exceeded
+          content:
+            text/plain:
+              example: "403 Client Error: Forbidden for url: https://api.yrikka.com/v1/presigned"
   /submit-job:
     post:
       summary: Submit a model evaluation job
@@ -155,6 +160,11 @@ paths:
                 error: "Invalid model package URI or missing required parameters"
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Quota exceeded
+          content:
+            text/plain:
+              example: "403 Client Error: Forbidden for url: https://api.yrikka.com/v1/submit-job"
   /job-status:
     get:
       summary: Check the status of a submitted job
@@ -187,18 +197,35 @@ paths:
                   value:
                     status: "SUCCESS"
                     results: {
-                      "mAP": 0.87,
-                      "precision": 0.92,
-                      "recall": 0.83,
-                      "f1_score": 0.89,
-                      "per_class_metrics": {
-                        "dark_brown_cherry": {"precision": 0.95, "recall": 0.88, "f1": 0.91},
-                        "green_cherry": {"precision": 0.90, "recall": 0.82, "f1": 0.86},
-                        "red_cherry": {"precision": 0.91, "recall": 0.79, "f1": 0.85}
+                      "Aggregate": {
+                        "Precision": 0.812,
+                        "Recall": 0.519,
+                        "F1-score": 0.629
                       },
-                      "evaluation_context": "Cherry detection in various lighting conditions",
-                      "total_test_images": 250,
-                      "evaluation_timestamp": "2023-06-15T14:30:45Z"
+                      "Granular": [
+                        {
+                          "Category": "time of day",
+                          "Items": [
+                            {
+                              "Context": "night",
+                              "Precision": 0.786,
+                              "Recall": 0.574,
+                              "F1-Score": 0.644
+                            }
+                          ]
+                        },
+                        {
+                          "Category": "environment",
+                          "Items": [
+                            {
+                              "Context": "snow resort",
+                              "Precision": 0.817,
+                              "Recall": 0.391,
+                              "F1-Score": 0.529
+                            }
+                          ]
+                        }
+                      ]
                     }
                 failed:
                   value:
@@ -207,9 +234,14 @@ paths:
                 error:
                   value:
                     status: "ERROR"
-                    message: "No state snapshot found for job_id: job_invalid."
+                    message: "Failed to check status for job ID: invalid_job_id."
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Quota exceeded
+          content:
+            text/plain:
+              example: "403 Client Error: Forbidden for url: https://api.yrikka.com/v1/job-status"
         '404':
           description: Job not found
           content:
@@ -249,7 +281,7 @@ components:
           description: S3 URI of the uploaded model package (from the presigned URL response)
         target_classes:
           type: array
-          description: List of class names that the model should detect (must match the CLASS_MAPPING in the inference script)
+          description: List of class names that the model should detect (must match the CLASS_NAMES in the inference script)
           items:
             type: string
         context_description:

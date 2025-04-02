@@ -471,9 +471,5 @@ Common issues and solutions:
 
 ## Need Help?
 
-- API Documentation: [APEX API Documentation](https://docs.yrikka.com/apex)
+- API Documentation: [APEX API Documentation](https://yrikka.github.io/apex-quickstart/)
 - Contact Support: help@yrikka.com
-
-## API Documentation
-
-Our API documentation is available at [https://yrikka.github.io/apex-quickstart/](https://yrikka.github.io/apex-quickstart/)

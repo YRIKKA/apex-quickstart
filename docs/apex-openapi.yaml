@@ -67,7 +67,7 @@ info:
        - Periodically check the `/job-status` endpoint with your job ID
        - When the job completes, you'll receive comprehensive evaluation metrics
     
-    The sample code in our [GitHub repository](https://github.com/yrikka/model-evaluation-example) demonstrates this complete workflow.
+    The sample code in our [GitHub repository](https://github.com/YRIKKA/apex-quickstart) demonstrates this complete workflow.
     
     ## Model Package Structure
     Your model package should contain the following:
@@ -84,7 +84,7 @@ info:
     altText: 'YRIKKA Logo'
 externalDocs:
   description: GitHub repository with example implementation
-  url: https://github.com/yrikka/model-evaluation-example
+  url: https://github.com/YRIKKA/apex-quickstart
 servers:
   - url: https://api.yrikka.com/v1
     description: Yrikka API v1

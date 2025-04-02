@@ -84,7 +84,7 @@ info:
   contact:
     email: help@yrikka.com
   x-logo:
-    url: 'https://yrikka.github.io/apex-quickstart/assets/logo.png'
+    url: 'https://yrikka.github.io/apex-quickstart/docs/logo.png'
     altText: 'YRIKKA Logo'
 externalDocs:
   description: GitHub repository with example implementation

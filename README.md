@@ -14,6 +14,8 @@ This repository provides sample code and examples for using YRIKKA's APEX API - 
 
 Our initial release is free, allowing users to submit up to 8 jobs per day. After reaching this limit, further submissions will be denied. Please plan your usage accordingly.
 
+> ⚠️ **Important**: When you reach your quota limit for any API route, requests will receive a 403 Forbidden response.
+
 ## Table of Contents
 
 - [What is APEX?](#what-is-apex)

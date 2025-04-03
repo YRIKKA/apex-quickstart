@@ -85,7 +85,8 @@ multiple viewing angles."
             "F1-Score": 0.644
           }
         ]
-      }
+      },
+      // ... additional categories (weather, distance, etc.) ...
     ]
   }
 }

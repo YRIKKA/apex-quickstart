@@ -57,7 +57,7 @@ Your context description determines what scenarios your model will be tested in.
 
 Example:
 ```
-"Evaluate cherry detection in outdoor orchards with varying lighting conditions 
+"Evaluate coffee cherry detection in outdoor orchards with varying lighting conditions 
 including direct sunlight, overcast, and dawn/dusk. Include scenarios with 
 cherries partially hidden by leaves, different stages of ripeness, and 
 multiple viewing angles."

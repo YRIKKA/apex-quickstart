@@ -10,7 +10,7 @@ APEX is a powerful API for evaluating object detection models in customizable co
 
 ## Quick Links
 
-**[🔑 Get API Key](https://apex.yrikka.com/login)**
+**[🔑 Get API Key](https://apex.yrikka.com/login?client_id=3fn9ks2vmp3gdis9jvts464v31&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fyrikka.com%2F)**
 
 **[📚 API Documentation](https://yrikka.github.io/apex-quickstart/)**
 

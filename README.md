@@ -92,13 +92,14 @@ multiple viewing angles."
 }
 ```
 
-## Quota Limits
+## API Access & Credits
 
-The free release of APEX includes a daily submission quota:
-- **8 evaluation jobs per day** via the `/submit-job` endpoint
-- When you reach this limit, job submissions will receive a `403 Forbidden` response
+APEX API usage requires credits associated with your API key before submitting evaluation jobs.
 
-🙋‍♀️ **Need higher limits?** Contact us!
+If your API key does not have available credits, job submissions may receive a `403 Forbidden` response.
+
+🙋‍♀️ Need credits or higher usage limits? Contact our team: help@yrikka.com
+
 
 ## Need Help?
 
